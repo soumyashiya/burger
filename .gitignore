@@ -1,0 +1,12 @@
+node_modules
+.next
+.next-verify
+out
+build
+.DS_Store
+*.pem
+.env*
+next-env.d.ts
+.playwright-mcp
+/*.png
+/tsconfig.tsbuildinfo
