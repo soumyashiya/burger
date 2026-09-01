@@ -1,0 +1,385 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   DESIGN TOKENS — the single source of truth for the whole site.
+   Colour values, fonts and easing are all defined once here and
+   consumed via Tailwind utilities (bg-bg, text-muted, font-display …).
+------------------------------------------------------------------- */
+@theme {
+  /* Monochrome ramp. Hierarchy is carried by value, weight and scale — not
+     hue. `accent` is pure white: the brightest step, used where gold used to
+     sit. */
+  --color-bg: #000000;
+  --color-surface: #0a0a0a;
+  --color-text: #ffffff;
+  --color-muted: #6e6e6e;
+  --color-stroke: #262626;
+  --color-accent: #ffffff;
+
+  /* The one hue in the system, and it earns its place by doing exactly one
+     job: marking the nav item you are on or pointing at. Because nothing else
+     on the page is coloured, it needs no size or weight to be found. Keep it
+     that way — the moment a second element borrows it, it stops reading as
+     "you are here". 7.3:1 on black, so it clears AA at 10px. */
+  --color-ember: #ff6a1a;
+
+  /* Fonts come in via next/font, which generates the family name at build
+     time — reference the variables it sets, never the family name. */
+  --font-anton: var(--font-anton-src), "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-display: var(--font-archivo-src), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-archivo-src), ui-sans-serif, system-ui, sans-serif;
+
+  --font-weight-400: 400;
+  --font-weight-500: 500;
+  --font-weight-600: 600;
+  --font-weight-700: 700;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Utility aliases so `font-600` / `font-700` read like the reference markup */
+@utility font-400 { font-weight: 400; }
+@utility font-500 { font-weight: 500; }
+@utility font-600 { font-weight: 600; }
+@utility font-700 { font-weight: 700; }
+
+/* ------------------------------------------------------------------
+   PAGE RHYTHM
+   Every band on the page — header, sections, footer — shares one pair of
+   left/right edges: content is capped at --page-max-width and inset from
+   there by --page-gutter. `.page-shell` is the centred wrapper that does
+   it, and it is the only thing that should be setting a page-level
+   max-width or horizontal padding.
+
+   The full-bleed stages (hero HUD, The Sear, The Cut) can't use a centred
+   wrapper — their content is absolutely positioned or scrolls sideways —
+   so they read `--page-inset` instead: the same edge expressed as a plain
+   offset. The percentage inside it is substituted unresolved and settles
+   against whichever box the value lands in, so only ever hang it on a
+   child of a full-width band.
+------------------------------------------------------------------- */
+:root {
+  --page-max-width: 1400px;
+  --page-gutter: 1.5rem;
+  --page-inset: max(
+    var(--page-gutter),
+    calc((100% - var(--page-max-width)) / 2 + var(--page-gutter))
+  );
+}
+
+@media (width >= 48rem) {
+  :root {
+    --page-gutter: 2.5rem;
+  }
+}
+
+@layer components {
+  .page-shell {
+    width: 100%;
+    max-width: var(--page-max-width);
+    margin-inline: auto;
+    padding-inline: var(--page-gutter);
+  }
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background-color: var(--color-bg);
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Anton ships a single weight. Synthetic bold smears it, so refuse any
+     weight utility that lands on a headline by mistake. */
+  .font-anton {
+    font-weight: 400 !important;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: #000000;
+  }
+
+  /* Keyboard focus only — pointer interaction stays clean */
+  :focus-visible {
+    outline: 1px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  /* Square, high-contrast scrollbar — no radius anywhere in the system */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: var(--color-bg); }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-stroke);
+    border: 3px solid var(--color-bg);
+    border-radius: 0;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
+}
+
+/* ------------------------------------------------------------------
+   LENIS
+------------------------------------------------------------------- */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------------
+   FULL-VIEWPORT STAGE
+   `100vh` on mobile is the height with browser chrome *retracted*, so a
+   `h-screen` hero runs taller than what you can actually see and pushes its
+   own bottom furniture off-screen. `svh` is the smallest viewport height —
+   it always fits, and unlike `dvh` it does not change as the address bar
+   hides and shows, which would otherwise resize a pinned stage mid-scroll.
+------------------------------------------------------------------- */
+.h-stage {
+  height: 100vh;
+  height: 100svh;
+}
+
+/* ------------------------------------------------------------------
+   HERO VIDEO FIT
+   The footage is 16:9 while the stage is always the full viewport, so one
+   fit mode cannot serve both. Wider than 16:9 (most desktops, once browser
+   chrome is taken off) crops the bun and the base away under `cover`, so
+   letterbox instead. Taller than 16:9 (every phone) would shrink `contain`
+   to a strip in the middle of the screen, so fill and lose the sides — the
+   stack is centred, so nothing important goes.
+------------------------------------------------------------------- */
+.hero-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (min-aspect-ratio: 16 / 9) {
+  .hero-video {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+}
+
+/* ------------------------------------------------------------------
+   CAMERA / HUD EFFECTS (hero)
+------------------------------------------------------------------- */
+.cam-vignette {
+  background:
+    radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.42) 78%, rgba(0, 0, 0, 0.72) 100%);
+}
+
+.cam-scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.028) 0px,
+    rgba(255, 255, 255, 0.028) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+.cam-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 25% 33.333%;
+}
+
+.film-grain {
+  background-image: url("/textures/grain.png");
+  background-size: 180px 180px;
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+}
+
+/* ------------------------------------------------------------------
+   KEYFRAMES
+------------------------------------------------------------------- */
+@keyframes rec-blink {
+  0%, 45% { opacity: 1; }
+  50%, 95% { opacity: 0.15; }
+  100% { opacity: 1; }
+}
+.anim-rec-blink { animation: rec-blink 1.6s steps(1, end) infinite; }
+
+@keyframes hud-blink {
+  0%, 100% { opacity: 0.75; }
+  50% { opacity: 0.3; }
+}
+.anim-hud-blink { animation: hud-blink 2.4s ease-in-out infinite; }
+
+@keyframes hud-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(1000%); }
+}
+.anim-hud-scan { animation: hud-scan 6s linear infinite; }
+
+@keyframes audio-meter {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+.anim-audio-meter {
+  transform-origin: bottom;
+  animation: audio-meter 0.7s ease-in-out infinite;
+}
+
+/* Kept the class name so the hero's cut-to-camera trigger still finds it —
+   the flash is now a hard white frame rather than a gold bloom. */
+@keyframes gold-flash {
+  0% { opacity: 0; }
+  6% { opacity: 0.8; }
+  100% { opacity: 0; }
+}
+.anim-gold-flash { animation: gold-flash 0.7s steps(6, end) forwards; }
+
+@keyframes scroll-down {
+  0% { transform: translateY(-6px); opacity: 0; }
+  40% { opacity: 1; }
+  100% { transform: translateY(8px); opacity: 0; }
+}
+.anim-scroll-down { animation: scroll-down 1.8s ease-in-out infinite; }
+
+/* Sound gate */
+@keyframes gate-ring {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  70% { opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.anim-gate-ring { animation: gate-ring 3s ease-out infinite; }
+
+@keyframes gate-core-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14) inset; }
+  50% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55) inset; }
+}
+.anim-gate-core { animation: gate-core-glow 3.4s steps(2, end) infinite; }
+
+@keyframes gate-fadein {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.anim-gate-fadein {
+  opacity: 0;
+  animation: gate-fadein 1s var(--ease-out-expo) forwards;
+}
+
+@keyframes gate-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
+}
+.anim-gate-bounce { animation: gate-bounce 2s ease-in-out infinite; }
+
+@keyframes ping-slow {
+  0% { transform: scale(1); opacity: 0.7; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+.anim-ping-slow { animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+/* ------------------------------------------------------------------
+   BRUTALIST PRIMITIVES
+   With no accent hue left, emphasis is carried by inversion: a control is
+   either white-on-black or black-on-white, and hovering flips it.
+------------------------------------------------------------------- */
+.btn-brut,
+.btn-solid {
+  border: 1px solid var(--color-text);
+  transition:
+    background-color 0.25s var(--ease-out-quart),
+    color 0.25s var(--ease-out-quart),
+    border-color 0.25s var(--ease-out-quart);
+}
+
+.btn-brut {
+  background: transparent;
+  color: var(--color-text);
+}
+.btn-brut:hover,
+.btn-brut:focus-visible {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.btn-solid {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+.btn-solid:hover:not(:disabled),
+.btn-solid:focus-visible:not(:disabled) {
+  background: transparent;
+  color: var(--color-text);
+}
+.btn-solid:disabled {
+  background: transparent;
+  border-color: var(--color-stroke);
+  color: var(--color-muted);
+  opacity: 0.45;
+}
+
+/* Hairline rule used to separate blocks in place of the old card borders. */
+.rule {
+  height: 1px;
+  width: 100%;
+  background: var(--color-stroke);
+}
+
+/* ------------------------------------------------------------------
+   HELPERS
+------------------------------------------------------------------- */
+.vertical-rl {
+  writing-mode: vertical-rl;
+}
+.vertical-lr {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Text mask reveal — the line sits inside an overflow-hidden wrapper */
+.reveal-line { display: block; overflow: hidden; }
+.reveal-line > * { display: block; will-change: transform; }
+
+/* ------------------------------------------------------------------
+   REDUCED MOTION
+   Non-essential motion is disabled; scroll-driven sections fall back
+   to their final/legible state (handled in JS via matchMedia too).
+------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .cam-scanlines,
+  .film-grain {
+    display: none;
+  }
+}
